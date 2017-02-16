@@ -1,0 +1,2 @@
+&fire=0&fire=7&fire=1&fire=6&fire=2&fire=5&fire=3&fire=4&fire=0&fire=1&fire=2&fire=3&fire=4&fire=5&fire=6&fire=7&fire=6&fire=5&fire=4&fire=3&fire=2&fire=1&fire=0
+provision=8&arm=0&arm=1&arm=2&arm=3&arm=4&arm=5&arm=6&arm=7

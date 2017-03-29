@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -40,16 +41,40 @@ import raspiworks.client.M7ServerClient;
  */
 public class M7Server extends HttpServlet
 {
-    M7ServerClient M7Client=new M7ServerClient();
+    M7ServerClient M7Client;
+    /**
+     * Initializes the client and controller by lazy instantiating M7ServerClient & calling the initialize method
+     * @param config
+     * @throws ServletException 
+     */
+    @Override
+    public void init(ServletConfig config) throws ServletException
+    {
+        M7Client=new M7ServerClient();
+        try{
+            M7Client.executeClientCommand("initialize");
+        }
+        catch(InvalidCommandException e){
+            //manually passing a command so it is guaranteed to be valid  
+            System.err.println(e);
+        }
+    }
+    @Override
+    public void destroy()
+    {
+        
+    }
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
      *
      * @param request servlet request
      * @param response servlet response
+     *
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
+
     protected void processRequest(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
     {
         String message;

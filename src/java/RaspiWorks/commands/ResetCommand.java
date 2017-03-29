@@ -25,7 +25,11 @@ package raspiworks.commands;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioPin;
+import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinPullResistance;
+import com.pi4j.io.gpio.PinState;
 import java.util.List;
+import raspiworks.receiver.ProvisionGpio;
 
 /**
  *
@@ -37,12 +41,20 @@ public class ResetCommand implements M7ServerCommand
     public ResetCommand(GpioController gpioController){
         this.gpioController=gpioController;
     }
+    @Override
     public void execute(){
-        gpioController.shutdown();
+        ProvisionGpio provision=new ProvisionGpio(gpioController);
+        
+        //gpioController.shutdown();
         List<GpioPin> pins=(List<GpioPin>)gpioController.getProvisionedPins();
-        while(pins.size()>0)
+        while(pins.size()>0){
+            //set pin state to low & turn off pull down resistor
+           ((GpioPinDigitalOutput)pins.get(0)).setState(PinState.LOW);
+           ((GpioPinDigitalOutput)pins.get(0)).setPullResistance(PinPullResistance.OFF);
             //index has to be the first element since each element is removed from the list as the pins 
             //are unprovisioned
-            gpioController.unprovisionPin(pins.get(0));     
+            gpioController.unprovisionPin(pins.get(0)); 
+            
+        }
     }
 }

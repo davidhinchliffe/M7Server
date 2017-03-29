@@ -49,6 +49,8 @@ import raspiworks.exceptions.ChannelNotReadyException;
  
  to maintain consistency in naming..a channel consists of two pins, a firing pin and an arming pin
  the arming pin must be set before the firing pin can be fired.  
+ * 
+ * 
  */
 public class M7ServerClient
 {

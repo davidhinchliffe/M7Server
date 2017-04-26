@@ -25,6 +25,7 @@ package raspiworks.commands;
 
 import com.pi4j.io.gpio.GpioController;
 import java.io.IOException;
+import raspiworks.M7Device.M7Device;
 
 /**
  *
@@ -32,13 +33,12 @@ import java.io.IOException;
  */
 public class ShutdownCommand implements M7ServerCommand
 {
-    private final GpioController gpioController;
-    public ShutdownCommand(GpioController gpioController) {
-        this.gpioController=gpioController;
+   // private final GpioController gpioController;
+    public ShutdownCommand() {
     }
     @Override
     public void execute(){
-        gpioController.shutdown();
+        M7Device.GPIO.shutdown();
         String scriptPath="/home/pi/scripts/shutdownPi.sh";
         Runtime rt=Runtime.getRuntime();
         try{

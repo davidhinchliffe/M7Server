@@ -23,13 +23,14 @@
  */
 package raspiworks.loader;
 
-import com.pi4j.io.gpio.GpioController;
-import com.pi4j.io.gpio.GpioFactory;
-import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.Pin;
-import com.pi4j.io.gpio.PinPullResistance;
-import com.pi4j.io.gpio.PinState;
-import com.pi4j.io.gpio.RaspiPin;
+import com.pi4j.io.i2c.I2CBus;
+import com.pi4j.io.i2c.I2CDevice;
+import com.pi4j.io.i2c.I2CFactory;
+import com.pi4j.io.i2c.I2CFactory.UnsupportedBusNumberException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import raspiworks.commands.ArmCommand;
 import raspiworks.commands.DisarmCommand;
 import raspiworks.commands.FireCommand;
@@ -37,9 +38,10 @@ import raspiworks.commands.ResetCommand;
 import raspiworks.commands.ShutdownCommand;
 import raspiworks.commands.StatusCommand;
 import raspiworks.invoker.M7ServerController;
-import raspiworks.receiver.ProvisionGpio;
-import raspiworks.receiver.RaspberryPiGpioPin;
 import raspiworks.commands.M7ServerCommand;
+import raspiworks.M7Device.M7Device;
+import raspiworks.M7Device.MCP23017;
+import raspiworks.M7Device.RaspberryPi;
 
 /**
  *
@@ -47,137 +49,87 @@ import raspiworks.commands.M7ServerCommand;
  */
 public class M7ServerControllerLoader
 {
-    //can be final since only one reference to the pins is allowed. 
-    private final GpioController gpioController;
-    private final int MAX_CHANNELS=8;
+    private int MAX_CHANNELS;
     private M7ServerController controller;
-    private int provisionedChannels;
     public M7ServerControllerLoader(){
-        provisionedChannels=0;
-        gpioController=GpioFactory.getInstance();
-    }
-     //assigns a Gpio pin to a firing channel
-    private Pin assignChannelToFireGpio(int channel)
-    {
-        Pin pin=null;
-        switch (channel)
-        {
-            case 0:
-                pin=RaspiPin.GPIO_00;
-                break;
-            case 1:
-                pin=RaspiPin.GPIO_01;
-                break;
-            case 2:
-                pin=RaspiPin.GPIO_02;
-                break;
-            case 3:
-                pin=RaspiPin.GPIO_03;
-                break;
-            case 4:
-                pin=RaspiPin.GPIO_04;
-                break;
-            case 5:
-                pin=RaspiPin.GPIO_05;
-                break;
-            case 6:
-                pin=RaspiPin.GPIO_06;
-                break;
-            case 7:
-                pin=RaspiPin.GPIO_07;
-                break;
-            default:
-                break;
-        }
-        
-        return pin;
-    }
-    
-    //assigns a gpio pin to a arming channel
-    private Pin assignChannelToArmGpio(int channel)
-    {
-        Pin pin=null;
-        switch (channel)
-        {
-            case 0:
-                pin=RaspiPin.GPIO_21;
-                break;
-            case 1:
-                pin=RaspiPin.GPIO_22;
-                break;
-            case 2:
-                pin=RaspiPin.GPIO_23;
-                break;
-            case 3:
-                pin=RaspiPin.GPIO_24;
-                break;
-            case 4:
-                pin=RaspiPin.GPIO_25;
-                break;
-            case 5:
-                pin=RaspiPin.GPIO_26;
-                break;
-            case 6:
-                pin=RaspiPin.GPIO_27;
-                break;
-            case 7:
-                pin=RaspiPin.GPIO_28;
-                break;
-            default:
-                break;
-        }
-        return pin;
-    }
-        public String getNumberOfProvisionedChannels(){
-        return Integer.toString(provisionedChannels);
     }
 
-    //It sets up the controller by pairing up the channels with the commands and 
-    //it provisions all of the gpio pins.  It returns the number of pins that were provisioned
-    
-    public M7ServerController initializeController()
+        private List<Integer> getExpansionAddress(){
+        //since max i2c address space is 7 bit, there are a possible 127 addresses 
+        //that can be assigned, 1-127
+            
+            //ordered list in order by device address
+            List<Integer> expansionAddresses=new ArrayList<>();
+            try {
+                final I2CBus bus=I2CFactory.getInstance(I2CBus.BUS_1);
+                //addresses range is 1-127 or 7 bit
+                for (int i=1;i<128; i++)
+                {
+                    try{
+                        I2CDevice device=bus.getDevice(i);
+                        //if write is successful then device exists
+                        device.write((byte)0);
+                        //add device to List
+                        expansionAddresses.add(i);
+                    }
+                    //exception is ignored and the next device is tested
+                    catch (Exception ignoreException){}
+                }
+            }
+             catch(UnsupportedBusNumberException | IOException e){}
+            return expansionAddresses;
+        }
+        public List<M7Device> initializeDevices(){
+            List<M7Device> devices=new ArrayList<>();
+            
+            //the first one is the Raspberry Pi since it will always be present. It is assigned 0 since the MCP23017 address space is 1-127
+            M7Device raspberryPi=new RaspberryPi(0);
+            int maxChannels=raspberryPi.getNumberOfChannels();
+            devices.add(raspberryPi);
+            //get the MCP23017 addresses that are attached to the Raspberry Pi
+            for (Integer address:getExpansionAddress())
+            {
+                M7Device mcp23017 = new MCP23017(address);
+                devices.add(mcp23017);
+                maxChannels +=mcp23017.getNumberOfChannels();
+            }
+            MAX_CHANNELS=maxChannels;
+            return devices;
+        }
+  public M7ServerController initializeController()
     {
-
-           provisionedChannels=0;
-           ProvisionGpio provision=new ProvisionGpio(gpioController);
            M7ServerCommand fireCommand;
            M7ServerCommand armCommand;
            M7ServerCommand disarmCommand;
            M7ServerCommand statusCommand;
-           M7ServerCommand resetCommand=new ResetCommand(gpioController);
-           M7ServerCommand shutdownCommand=new ShutdownCommand(gpioController);
+           M7ServerCommand resetCommand=new ResetCommand();
+           M7ServerCommand shutdownCommand=new ShutdownCommand();
            
-           RaspberryPiGpioPin theGpioPin;
-           Pin pin;
-           
+           List<M7Device> PiDevices;
+           PiDevices=initializeDevices();
            controller=new M7ServerController(MAX_CHANNELS);
            controller.setRaspberryPiCommands(resetCommand,shutdownCommand);
-           controller.resetGpio();
+           //controller.resetGpio();
            
-           for(int channel=0;channel<MAX_CHANNELS;++channel)
-           {
-               //setup the firing pin for the channel 
-               pin=assignChannelToFireGpio(channel);
-               //this is the line we need to provison to pin low with a transistor                 
-                GpioPinDigitalOutput provisionedPin=provision.ProvisionOutputPin(pin,"Channel " + channel,PinState.LOW);
-                                  
-                provisionedPin.setShutdownOptions(true,PinState.LOW,PinPullResistance.OFF);
-                theGpioPin=new RaspberryPiGpioPin(provisionedPin);
-                fireCommand=new FireCommand(theGpioPin);
-                
-                //setup the arming/disarming pin for the channel
-                pin=assignChannelToArmGpio(channel);
-                provisionedPin=provision.ProvisionOutputPin(pin,"Channel " + channel+"b", PinState.LOW);
-                provisionedPin.setShutdownOptions(true,PinState.LOW,PinPullResistance.OFF);
-                theGpioPin=new RaspberryPiGpioPin(provisionedPin);        
-                armCommand=new ArmCommand(theGpioPin);
-                disarmCommand=new DisarmCommand(theGpioPin);
-                statusCommand=new StatusCommand(theGpioPin);
-                
-                ++provisionedChannels;
-                //setup controller
-                controller.setGpioCommands(channel, fireCommand,armCommand,disarmCommand,statusCommand);        
+           int offset=0;
+           //iterate through the device list to assign channels to the commands
+           for (M7Device device:PiDevices){
+               List<Integer> availableChannels=device.getAvailableChannels();
+               for(Integer channel: availableChannels)
+               //for(int channel=0;channel<8;++channel)
+               {
+                   Pin firingPin=device.provisionFiringPin(channel+offset);
+                   Pin armingPin=device.provisionArmingPin(channel+offset);
+                   fireCommand=new FireCommand(device,firingPin);
+                   armCommand=new ArmCommand(device,armingPin);                 
+                   disarmCommand=new DisarmCommand(device,armingPin);
+                   statusCommand=new StatusCommand(device,armingPin);
+                   controller.setGpioCommands(channel+offset, fireCommand,armCommand,disarmCommand,statusCommand);
+               }
+               //channel offset based on the number of channels available on each device
+               offset+=device.getNumberOfChannels();
            }
+               
            return controller;
-    }
+    }    
 }

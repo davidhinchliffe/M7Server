@@ -23,6 +23,8 @@
  */
 
 package raspiworks.invoker;
+import java.util.List;
+import raspiworks.M7Device.M7Device;
 import raspiworks.exceptions.ChannelNotReadyException;
 import raspiworks.exceptions.InvalidChannelException;
 import raspiworks.commands.M7ServerCommand;
@@ -98,6 +100,7 @@ public class M7ServerController{
         }
 
     }
+   
     public String getStatus(int channelNumber) throws InvalidChannelException{
         if (channelNumber >= 0 && channelNumber < maxChannels){
              statusCommand[channelNumber].execute();
@@ -107,6 +110,9 @@ public class M7ServerController{
             //checked exception so it must be declared 
             throw new InvalidChannelException("Channel " + channelNumber + " isn't available");
 
+    }
+    public int getMaxChannels(){
+        return maxChannels;
     }
     public void resetGpio(){
         resetCommand.execute();

@@ -23,7 +23,8 @@
  */
 package raspiworks.commands;
 
-import raspiworks.receiver.RaspberryPiGpioPin;
+import com.pi4j.io.gpio.Pin;
+import raspiworks.M7Device.M7Device;
 /**
  *
  * @author David Hinchliffe <belgoi@gmail.com>
@@ -35,24 +36,23 @@ import raspiworks.receiver.RaspberryPiGpioPin;
  */
 public class FireCommand implements M7ServerCommand
 {
-    private final int IGNITER_BURN_TIME=500; //in milliseconds
-    private RaspberryPiGpioPin channel;
-    public FireCommand(RaspberryPiGpioPin provisionedPin){
-       channel=provisionedPin;
+    private final int IGNITER_BURN_TIME=500; //in milliseconds   
+    private final M7Device device;
+    private final Pin devicePin;
+    
+    public FireCommand(M7Device device, Pin pin){
+       this.device=device;
+       this.devicePin=pin;
     }
+    
     @Override
     public void execute(){ 
-        //use this one if there is a logic shift between the relay and raspberry pi
-        channel.setHigh();
-        //only use this one if directly connecting to the relay board
-        //channel.setLow();
         try
         {
-            //TODO: adjust this timing to get the best burn on the igniter
-        Thread.sleep(IGNITER_BURN_TIME);
-        channel.setLow();
+            device.setPinHigh(devicePin);
+            Thread.sleep(IGNITER_BURN_TIME);
+            device.setPinLow(devicePin);
         }
-        catch (Exception e)
-                {}
+        catch (Exception e){}
     }
 }

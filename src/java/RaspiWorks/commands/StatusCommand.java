@@ -23,7 +23,8 @@
  */
 package raspiworks.commands;
 
-import raspiworks.receiver.RaspberryPiGpioPin;
+import com.pi4j.io.gpio.Pin;
+import raspiworks.M7Device.M7Device;
 
 /**
  *
@@ -31,19 +32,24 @@ import raspiworks.receiver.RaspberryPiGpioPin;
  */
 public class StatusCommand implements M7ServerCommand
 {
-    private RaspberryPiGpioPin pin;
     private String status=new String();
-    public StatusCommand(RaspberryPiGpioPin outputPin){
-        pin=outputPin;
+    private final M7Device device;
+    private final Pin devicePin;
+    public StatusCommand(M7Device device, Pin pin){
+        //pin=outputPin;
+        this.device=device;
+        this.devicePin=pin;
     }
+    
+    @Override
     public void execute(){
        
-        if (pin.getPinState().equals("high"))
+        if (device.getPinState(devicePin).equals("high"))
             status="Armed";
         else
             status="Disarmed";
-        
     }
+    
     @Override
     public String toString(){
         return status;

@@ -22,18 +22,23 @@
  * SOFTWARE.
  */
 package raspiworks.commands;
-import raspiworks.receiver.RaspberryPiGpioPin;
+import com.pi4j.io.gpio.Pin;
+import raspiworks.M7Device.M7Device;
 /**
  *
  * @author David Hinchliffe <belgoi@gmail.com>
  */
 public class DisarmCommand implements M7ServerCommand
 {
-    RaspberryPiGpioPin channel;
-    public DisarmCommand(RaspberryPiGpioPin provisionedPin){
-        channel=provisionedPin;
+    private final M7Device device;
+    private final Pin devicePin;
+    
+    public DisarmCommand(M7Device device,Pin pin){
+        this.device=device;
+        this.devicePin=pin;
     }
+    @Override
     public void execute(){
-        channel.setLow();
+        device.setPinLow(devicePin);
     }
 }

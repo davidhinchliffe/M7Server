@@ -54,7 +54,7 @@ import raspiworks.exceptions.ChannelNotReadyException;
  */
 public class M7ServerClient
 {
-    private final int MAX_CHANNELS=8;
+    //private final int MAX_CHANNELS=8;
     private  M7ServerController controller;
     private final M7ServerControllerLoader loadController;
     public M7ServerClient()
@@ -90,7 +90,8 @@ public class M7ServerClient
         {
             case "initialize":
                 this.controller=loadController.initializeController();
-                message=loadController.getNumberOfProvisionedChannels();
+                //TODO: this method deprecated.  need to use maxchannels or rewrite.  
+                message=Integer.toString(controller.getMaxChannels());
                 break;
             case "reset":
                 controller.resetGpio();
@@ -101,7 +102,7 @@ public class M7ServerClient
                 message="shutdown successful";
                 break;
             case "maxchannels":
-                message=Integer.toString(MAX_CHANNELS);
+                message=Integer.toString(controller.getMaxChannels());
                 break;
             case "test":
                 message="connected successfully";

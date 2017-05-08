@@ -98,25 +98,25 @@ public class M7ServerControllerLoader
         }
   public M7ServerController initializeController()
     {
+           List<M7Device> piDevices;
+           piDevices=initializeDevices();
            M7ServerCommand fireCommand;
            M7ServerCommand armCommand;
            M7ServerCommand disarmCommand;
            M7ServerCommand statusCommand;
-           M7ServerCommand resetCommand=new ResetCommand();
+           M7ServerCommand resetCommand=new ResetCommand(piDevices);
            M7ServerCommand shutdownCommand=new ShutdownCommand();
            
-           List<M7Device> PiDevices;
-           PiDevices=initializeDevices();
+
            controller=new M7ServerController(MAX_CHANNELS);
            controller.setRaspberryPiCommands(resetCommand,shutdownCommand);
            //controller.resetGpio();
            
            int offset=0;
            //iterate through the device list to assign channels to the commands
-           for (M7Device device:PiDevices){
+           for (M7Device device:piDevices){
                List<Integer> availableChannels=device.getAvailableChannels();
                for(Integer channel: availableChannels)
-               //for(int channel=0;channel<8;++channel)
                {
                    Pin firingPin=device.provisionFiringPin(channel+offset);
                    Pin armingPin=device.provisionArmingPin(channel+offset);

@@ -50,7 +50,6 @@ import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import java.util.List;
-import com.pi4j.io.gpio.GpioPinDigitalOutput;
 public abstract class M7Device
 {
     protected List<Integer> availableChannels;
@@ -64,16 +63,16 @@ public abstract class M7Device
 
     public abstract boolean setPinHigh(Pin pin);
     public abstract boolean setPinLow(Pin pin);
+    public abstract void resetDevice();
     protected abstract void validateChannels();
    // public abstract void unProvisionPin(GpioPinDigitalOutput pin);
     
     public int getNumberOfChannels(){
         if(availableChannels.isEmpty())
             validateChannels();
-        return availableChannels.size();
-      
-            
+        return availableChannels.size();    
     }
+
     public List<Integer> getAvailableChannels(){
         if(availableChannels.isEmpty())
             validateChannels();       

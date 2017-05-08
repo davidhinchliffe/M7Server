@@ -25,7 +25,6 @@ package raspiworks.commands;
 
 import com.pi4j.io.gpio.GpioPin;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
-import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,17 +37,18 @@ import raspiworks.M7Device.M7Device;
  */
 public class ResetCommand implements M7ServerCommand
 {
-    public ResetCommand(){}
+    private List<M7Device> M7Devices=new ArrayList<>();
+    
+    public ResetCommand(List<M7Device> M7Devices){
+        this.M7Devices=M7Devices;
+       
+    }
     @Override
     public void execute(){
-      
-        List<GpioPin> pins=(List<GpioPin>)M7Device.GPIO.getProvisionedPins();
-        while(pins.size()>0){
-            //set pin state to low
-           ((GpioPinDigitalOutput)pins.get(0)).setState(PinState.LOW);
-            //index has to be the first element since each element is removed from the list as the pins 
-            //are unprovisioned
-            M7Device.GPIO.unprovisionPin(pins.get(0)); 
+        
+        for(M7Device device: M7Devices){
+            device.resetDevice();
         }
     }
+   
 }

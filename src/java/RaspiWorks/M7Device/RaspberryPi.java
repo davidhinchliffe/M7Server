@@ -121,7 +121,15 @@ public class RaspberryPi extends M7Device
           catch(Exception ignoreException){}
         }
     }
-
+    @Override
+    public void resetDevice(){
+        for (Integer channel: availableChannels)
+        {
+            Pin armingPin=assignArmGpio(channel);
+            if (devicePins.containsKey(armingPin))
+                unProvisionPin(devicePins.get(armingPin));
+        }
+    }
     private void unProvisionPin(GpioPinDigitalOutput pin){
          List<GpioPin> pins=(List<GpioPin>)M7Device.GPIO.getProvisionedPins();
          for(int i=0;i<pins.size();++i)

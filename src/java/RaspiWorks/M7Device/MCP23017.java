@@ -33,7 +33,8 @@ public class MCP23017 extends M7Device
     public int getAddress(){
         return super.address;
     }
-    
+   
+    @Override
     protected Pin assignFireGpio(int channel){
         Pin pin=null;
         if (channel >7 )
@@ -68,7 +69,7 @@ public class MCP23017 extends M7Device
            }
         return pin;
     }
-
+   @Override
     protected Pin assignArmGpio(int channel){
          Pin pin=null;
          if (channel >7 )
@@ -111,7 +112,7 @@ public class MCP23017 extends M7Device
         return pin;
     }
     @Override
-    public void validateChannels()
+    protected void validateChannels()
     {
         try{ 
                final MCP23017GpioProvider provider=new MCP23017GpioProvider(I2CBus.BUS_1,super.address);
@@ -132,7 +133,15 @@ public class MCP23017 extends M7Device
         }
         catch (UnsupportedBusNumberException | IOException e){}        
     }
-    
+    @Override
+    public void resetDevice(){
+         for (Integer channel: availableChannels)
+        {
+            Pin armingPin=assignArmGpio(channel);
+            if (devicePins.containsKey(armingPin))
+                unProvisionPin(devicePins.get(armingPin));
+        }       
+    }
     private void unProvisionPin(GpioPinDigitalOutput pin){
          List<GpioPin> pins=(List<GpioPin>)M7Device.GPIO.getProvisionedPins();
          for(int i=0;i<pins.size();++i)
